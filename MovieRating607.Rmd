@@ -1,0 +1,77 @@
+---
+title: "Movie Rating"
+author: "Andreina A"
+date: "2024-09-14"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+## loading packages
+```{r setup}
+library(tidyverse)
+library(dplyr)
+library(RMySQL)
+library(DBI)
+library(knitr)
+library(rstudioapi)
+```
+
+## Movie Ratings
+Part 1: Build Table
+• Choose six recent popular movies.
+• Ask at least five people that you know (friends, family, classmates, imaginary friends if
+necessary) to rate each of these movies that they have seen on a scale of 1 to 5.
+
+
+*In the data collected 6 popular movies from 2024 were rated from scale of 1-5, the movies were "Despicable Me 4, ''Twisters'', ''Dead Pool'', ''Inside Out'', ''BeetleJuice BeetleJuice'', and ''Borderlands''. The participants in my data collection were my friends and family, Dejay, Johana, Nanie, Nathan, and Stephanie. The data was stored into an SQL database.*
+
+
+Part 2: Store data in SQL database
+• Take the results (observations) and store them in the class MySQL database:
+- Server name: cunydata607sql.mysql.database.azure.com
+- Username / password: will be given to you in an email
+Note: it is good practice to change your password. To do so, use this SQL command:
+SET PASSWORD = ‘<your new password here>';
+
+**A Data table was created on SQL with the ratings collected for six movies, from 5 individuals**
+
+Part 3: Transfer data from SQL database to R dataframe
+• Load the information from the SQL database into an R dataframe.
+
+##Loading data from SQL to R
+```{r}
+mydb = dbConnect(MySQL(), user='andreina.arias80', password=rstudioapi::askForPassword(prompt = 'Password: '), dbname='andreina.arias80', host='cunydata607sql.mysql.database.azure.com')
+```
+
+## Accessing tables from My database in SQL
+
+
+```{r}
+dbListTables(mydb)
+```
+
+#Loading and display data
+
+```{r}
+Ratings=dbSendQuery(mydb,"select * from movie_ratings")
+Rating_Of_Movies<- fetch(Ratings)
+print(Rating_Of_Movies)
+glimpse(Rating_Of_Movies)
+```
+
+
+## Part 4: Missing data strategy
+• Implement an approach to missing data
+• Explain why you decided to take the chosen approach
+Note: consider that later in the course you will revisit this information you have collected and
+will use it to implement a Recommender.
+
+**For missing data in SQL uses 'NULL', while R uses 'NA' as the value. Below I created a data frame with the calculated average of the ratings and added the new values as a column on the data frame on R only, to not affect the data in SQL. It is seen that the average was still calculated for the movie "Borderlands" even with a value of 'NA', 'NA' was ignored. I would rather have the value as 'NA' then to place a zero as it would cause confusion and a false average, it is better to remove the value completely since the rating was not zero instead the value is missing since Stephanie didn't watch the movie. **
+```{r}
+Rating_Average<- Rating_Of_Movies |>
+  dplyr:::mutate.data.frame(avg_rating=rowMeans(Rating_Of_Movies[, c('Nathan_ratings', 'Nanie_ratings','Dejay_ratings','Stephanie_ratings','Johana_ratings')], na.rm=TRUE))
+print(Rating_Average)
+```
+
